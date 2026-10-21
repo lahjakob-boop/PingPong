@@ -25,6 +25,9 @@ namespace PingPong
         [Header("Computer")]
         [Range(0f, 1f)] public float aiDifficulty = 0.55f;
 
+        /// <summary>Raised when a point is scored: (winner, game over).</summary>
+        public event System.Action<Side, bool> PointScored;
+
         enum State { WaitingServe, Rally, PointOver, GameOver }
 
         State state;
@@ -283,10 +286,12 @@ namespace PingPong
                 state = State.GameOver;
                 stateTimer = 1.0f;
                 message = "";
+                if (PointScored != null) PointScored(winner, true);
                 return;
             }
 
             ShowMessage((winner == Side.Player ? "Your point!" : "CPU's point") + "  (" + reason + ")", 1.6f);
+            if (PointScored != null) PointScored(winner, false);
             state = State.PointOver;
             stateTimer = 1.4f;
 

@@ -17,6 +17,7 @@ namespace PingPong.EditorTools
         const string MatDir = Root + "/Materials";
         const string TexDir = Root + "/Textures";
         const string SceneDir = Root + "/Scenes";
+        const string AudioDir = Root + "/Audio";
         const string ScenePath = SceneDir + "/PingPong.unity";
 
         // Hall
@@ -74,8 +75,12 @@ namespace PingPong.EditorTools
             Material mBoard = GetMat("Board", new Color(0.05f, 0.05f, 0.06f), 0.4f);
             Material mBoardRed = GetMat("BoardRed", new Color(0.6f, 0.06f, 0.06f), 0.3f);
             Material mBoardBlue = GetMat("BoardBlue", new Color(0.05f, 0.12f, 0.45f), 0.3f);
-            Material mBannerRed = GetMat("BannerRed", new Color(0.75f, 0.1f, 0.12f), 0.2f);
-            Material mBannerBlue = GetMat("BannerBlue", new Color(0.1f, 0.25f, 0.65f), 0.2f);
+            Material mBannerRed = GetMat("BannerRed", new Color(0.72f, 0.08f, 0.1f), 0.25f, null, Vector2.zero, new Color(0.16f, 0.02f, 0.02f));
+            Material mBannerBlue = GetMat("BannerBlue", new Color(0.06f, 0.2f, 0.6f), 0.25f, null, Vector2.zero, new Color(0.01f, 0.04f, 0.14f));
+            Material mBannerTrim = GetMat("BannerTrim", new Color(0.97f, 0.97f, 0.97f), 0.3f, null, Vector2.zero, new Color(0.25f, 0.25f, 0.25f));
+            Material mGold = GetMat("Gold", new Color(0.95f, 0.72f, 0.2f), 0.7f, null, Vector2.zero, new Color(0.2f, 0.13f, 0.02f), 0.5f);
+            Material mCard = GetMat("FlipCard", new Color(0.96f, 0.96f, 0.94f), 0.35f, null, Vector2.zero, new Color(0.12f, 0.12f, 0.12f));
+            Material mServeLight = GetMat("ServeLight", new Color(1f, 0.75f, 0.15f), 0.6f, null, Vector2.zero, new Color(2.2f, 1.4f, 0.2f));
             Material mPot = GetMat("Pot", new Color(0.85f, 0.85f, 0.82f), 0.3f);
             Material mPlant = GetMat("Plant", new Color(0.16f, 0.45f, 0.2f), 0.2f);
             Material mTowel = GetMat("Towel", new Color(0.95f, 0.95f, 0.95f), 0.05f);
@@ -148,7 +153,7 @@ namespace PingPong.EditorTools
             BarrierLine(barriers.transform, new Vector3(-CourtX, 0f, -CourtZ), new Vector3(CourtX, 0f, -CourtZ), 4, mBarrier, mBarrierStripe, mBarrierAccent);
 
             // ---------------- bleachers with spectators (left)
-            BuildBleachers(new Vector3(-5.1f, 0f, 2f), 12f, 4, mStep, mSeat, shirts, skins);
+            Transform[] spectators = BuildBleachers(new Vector3(-5.1f, 0f, 2f), 12f, 4, mStep, mSeat, shirts, skins);
 
             // ---------------- extra props (right and back)
             GameObject props = new GameObject("Props");
@@ -164,8 +169,9 @@ namespace PingPong.EditorTools
 
             // banners on the far wall
             Font font = GetFont();
-            BuildBanner(pr, new Vector3(-5.2f, 2.1f, HallZ - 0.08f), mBannerRed, mBarrierStripe, "PING PONG", font);
-            BuildBanner(pr, new Vector3(5.2f, 2.1f, HallZ - 0.08f), mBannerBlue, mBarrierStripe, "FAIR PLAY", font);
+            BannerStyle bs = new BannerStyle { trim = mBannerTrim, frame = mFrame, metal = mMetal, gold = mGold, red = mRubberRed, black = mRubberBlack, wood = mWood, ball = mBall };
+            BuildBanner(pr, new Vector3(-5.1f, 2.05f, HallZ - 0.1f), mBannerRed, "PING PONG", true, font, bs);
+            BuildBanner(pr, new Vector3(5.1f, 2.05f, HallZ - 0.1f), mBannerBlue, "FAIR PLAY", false, font, bs);
 
             // ---------------- main table
             BuildTable("Table", null, Vector3.zero, 0f, mTable, mTableEdge, mLine, mMetal, mNet);
@@ -248,8 +254,22 @@ namespace PingPong.EditorTools
             ai.game = game;
             ai.ball = ball;
 
+            // ---------------- crowd sounds and cheering spectators
+            GameObject crowdGo = new GameObject("Crowd");
+            AudioSource crowdAudio = crowdGo.AddComponent<AudioSource>();
+            crowdAudio.playOnAwake = false;
+            crowdAudio.spatialBlend = 0f;
+            PingPongCrowd crowd = crowdGo.AddComponent<PingPongCrowd>();
+            crowd.game = game;
+            crowd.spectators = spectators;
+            crowd.playerPoint = AssetDatabase.LoadAssetAtPath<AudioClip>(AudioDir + "/CrowdCheer.wav");
+            crowd.cpuPoint = AssetDatabase.LoadAssetAtPath<AudioClip>(AudioDir + "/CrowdApplause.wav");
+            crowd.playerWins = AssetDatabase.LoadAssetAtPath<AudioClip>(AudioDir + "/CrowdWin.wav");
+            crowd.playerLoses = AssetDatabase.LoadAssetAtPath<AudioClip>(AudioDir + "/CrowdLose.wav");
+            if (crowd.playerPoint == null) Debug.LogWarning("PingPong: crowd sounds not found in " + AudioDir);
+
             // ---------------- scoreboard next to the table
-            BuildScoreboard(game, font, cam.transform.position, mBoard, mBoardRed, mBoardBlue, mMetal);
+            BuildScoreboard(game, font, cam.transform.position, mBoard, mBoardRed, mBoardBlue, mMetal, mCard, mServeLight, mGold);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -334,8 +354,9 @@ namespace PingPong.EditorTools
             }
         }
 
-        static void BuildBleachers(Vector3 frontCenter, float length, int rows, Material step, Material seat, Material[] shirts, Material[] skins)
+        static Transform[] BuildBleachers(Vector3 frontCenter, float length, int rows, Material step, Material seat, Material[] shirts, Material[] skins)
         {
+            var people = new System.Collections.Generic.List<Transform>();
             GameObject root = new GameObject("Bleachers");
             Transform t = root.transform;
             System.Random rng = new System.Random(67);
@@ -356,11 +377,17 @@ namespace PingPong.EditorTools
                     Material skin = skins[rng.Next(skins.Length)];
                     float bodyH = 0.6f + (float)rng.NextDouble() * 0.12f;
                     Vector3 basePos = new Vector3(x + 0.12f, top + 0.08f, frontCenter.z + z + jitter);
-                    Prim(PrimitiveType.Capsule, "Spectator", t, basePos + new Vector3(0f, bodyH * 0.5f, 0f), new Vector3(0.4f, bodyH * 0.5f, 0.3f), shirt);
-                    Prim(PrimitiveType.Sphere, "Head", t, basePos + new Vector3(0.02f, bodyH + 0.1f, 0f), Vector3.one * 0.21f, skin);
-                    Prim(PrimitiveType.Cube, "Legs", t, basePos + new Vector3(0.28f, 0.05f, 0f), new Vector3(0.36f, 0.12f, 0.26f), shirts[5]);
+                    GameObject person = new GameObject("Spectator");
+                    person.transform.SetParent(t, false);
+                    person.transform.position = basePos;
+                    Transform pt = person.transform;
+                    Prim(PrimitiveType.Capsule, "Body", pt, basePos + new Vector3(0f, bodyH * 0.5f, 0f), new Vector3(0.4f, bodyH * 0.5f, 0.3f), shirt);
+                    Prim(PrimitiveType.Sphere, "Head", pt, basePos + new Vector3(0.02f, bodyH + 0.1f, 0f), Vector3.one * 0.21f, skin);
+                    Prim(PrimitiveType.Cube, "Legs", pt, basePos + new Vector3(0.28f, 0.05f, 0f), new Vector3(0.36f, 0.12f, 0.26f), shirts[5]);
+                    people.Add(pt);
                 }
             }
+            return people.ToArray();
         }
 
         static void BuildWindowBand(Transform parent, Vector3 center, Vector3 along, float length, float height, Material glass, Material frame)
@@ -405,18 +432,67 @@ namespace PingPong.EditorTools
             Prim(PrimitiveType.Sphere, "Leaves", t, pos + new Vector3(-0.12f, 1.15f, -0.1f), new Vector3(0.5f, 0.6f, 0.5f), leaves);
         }
 
-        static void BuildBanner(Transform parent, Vector3 pos, Material cloth, Material trim, string text, Font font)
+        class BannerStyle
         {
+            public Material trim, frame, metal, gold, red, black, wood, ball;
+        }
+
+        /// <summary>Hanging banner: framed cloth with a pinstripe border, a paddle-and-ball icon and shadowed text.</summary>
+        static void BuildBanner(Transform parent, Vector3 pos, Material cloth, string text, bool iconLeft, Font font, BannerStyle st)
+        {
+            const float W = 5.0f, H = 1.3f;
             GameObject root = new GameObject("Banner " + text);
             root.transform.SetParent(parent, false);
             root.transform.position = pos;
-            LocalPrim(PrimitiveType.Cube, "Cloth", root.transform, Vector3.zero, new Vector3(3.2f, 1.1f, 0.03f), cloth);
-            LocalPrim(PrimitiveType.Cube, "Edge", root.transform, new Vector3(0f, 0.5f, -0.01f), new Vector3(3.2f, 0.08f, 0.03f), trim);
-            LocalPrim(PrimitiveType.Cube, "Edge", root.transform, new Vector3(0f, -0.5f, -0.01f), new Vector3(3.2f, 0.08f, 0.03f), trim);
-            AddText(root.transform, "Text", new Vector3(0f, 0f, -0.03f), text, 0.55f, Color.white, font);
+            Transform t = root.transform;
+
+            // cloth and frame
+            LocalPrim(PrimitiveType.Cube, "Cloth", t, Vector3.zero, new Vector3(W, H, 0.03f), cloth);
+            LocalPrim(PrimitiveType.Cube, "Frame Top", t, new Vector3(0f, H * 0.5f + 0.03f, -0.01f), new Vector3(W + 0.12f, 0.06f, 0.05f), st.frame);
+            LocalPrim(PrimitiveType.Cube, "Frame Bottom", t, new Vector3(0f, -H * 0.5f - 0.03f, -0.01f), new Vector3(W + 0.12f, 0.06f, 0.05f), st.frame);
+            LocalPrim(PrimitiveType.Cube, "Frame Left", t, new Vector3(-W * 0.5f - 0.03f, 0f, -0.01f), new Vector3(0.06f, H + 0.12f, 0.05f), st.frame);
+            LocalPrim(PrimitiveType.Cube, "Frame Right", t, new Vector3(W * 0.5f + 0.03f, 0f, -0.01f), new Vector3(0.06f, H + 0.12f, 0.05f), st.frame);
+
+            // white pinstripe border and a gold accent line
+            float ix = W * 0.5f - 0.12f, iy = H * 0.5f - 0.12f;
+            LocalPrim(PrimitiveType.Cube, "Stripe Top", t, new Vector3(0f, iy, -0.018f), new Vector3(ix * 2f, 0.03f, 0.005f), st.trim);
+            LocalPrim(PrimitiveType.Cube, "Stripe Bottom", t, new Vector3(0f, -iy, -0.018f), new Vector3(ix * 2f, 0.03f, 0.005f), st.trim);
+            LocalPrim(PrimitiveType.Cube, "Stripe Left", t, new Vector3(-ix, 0f, -0.018f), new Vector3(0.03f, iy * 2f, 0.005f), st.trim);
+            LocalPrim(PrimitiveType.Cube, "Stripe Right", t, new Vector3(ix, 0f, -0.018f), new Vector3(0.03f, iy * 2f, 0.005f), st.trim);
+
+            // icon: crossed paddle with a ball
+            float side = iconLeft ? -1f : 1f;
+            float iconX = side * (W * 0.5f - 0.72f);
+            GameObject icon = new GameObject("Icon");
+            icon.transform.SetParent(t, false);
+            icon.transform.localPosition = new Vector3(iconX, -0.02f, -0.03f);
+            icon.transform.localRotation = Quaternion.Euler(0f, 0f, side * -28f);
+            GameObject rim = LocalPrim(PrimitiveType.Cylinder, "Paddle Rim", icon.transform, new Vector3(0f, 0.1f, 0.004f), new Vector3(0.66f, 0.008f, 0.66f), st.black);
+            rim.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            GameObject face = LocalPrim(PrimitiveType.Cylinder, "Paddle Face", icon.transform, new Vector3(0f, 0.1f, -0.006f), new Vector3(0.6f, 0.008f, 0.6f), st.red);
+            face.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            LocalPrim(PrimitiveType.Cube, "Paddle Handle", icon.transform, new Vector3(0f, -0.33f, -0.004f), new Vector3(0.1f, 0.3f, 0.03f), st.wood);
+            LocalPrim(PrimitiveType.Sphere, "Ball", t, new Vector3(iconX - side * 0.36f, 0.34f, -0.08f), Vector3.one * 0.15f, st.ball);
+
+            // text with a soft drop shadow, fitted to the free space
+            float textCenter = -side * 0.42f;
+            float maxWidth = W - 1.75f;
+            float cap = FitCapHeight(text, maxWidth, 0.5f);
+            AddText(t, "Text Shadow", new Vector3(textCenter + 0.035f, -0.035f, -0.025f), text, cap, new Color(0f, 0f, 0f, 0.45f), font, true);
+            AddText(t, "Text", new Vector3(textCenter, 0f, -0.035f), text, cap, Color.white, font, true);
+            LocalPrim(PrimitiveType.Cube, "Underline", t, new Vector3(textCenter, -cap * 0.5f - 0.13f, -0.02f), new Vector3(maxWidth * 0.78f, 0.035f, 0.006f), st.gold);
+
+            // hanging rod and cables up to the ceiling
+            GameObject rod = LocalPrim(PrimitiveType.Cylinder, "Rod", t, new Vector3(0f, H * 0.5f + 0.12f, -0.02f), new Vector3(0.05f, W * 0.5f + 0.15f, 0.05f), st.metal);
+            rod.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            float cableBottom = H * 0.5f + 0.12f;
+            float cableLen = HallH - pos.y - cableBottom;
+            for (int i = -1; i <= 1; i += 2)
+                LocalPrim(PrimitiveType.Cube, "Cable", t, new Vector3(i * (W * 0.5f - 0.3f), cableBottom + cableLen * 0.5f, -0.02f), new Vector3(0.012f, cableLen, 0.012f), st.metal);
         }
 
-        static void BuildScoreboard(PingPongGame game, Font font, Vector3 camPos, Material board, Material red, Material blue, Material metal)
+        /// <summary>Table-side flip scoreboard: black housing, coloured name plates, white flip cards and serve lights.</summary>
+        static void BuildScoreboard(PingPongGame game, Font font, Vector3 camPos, Material board, Material red, Material blue, Material metal, Material card, Material serveLight, Material gold)
         {
             Vector3 pos = new Vector3(2.15f, 0f, 0.2f);
             GameObject root = new GameObject("Scoreboard");
@@ -426,25 +502,68 @@ namespace PingPong.EditorTools
             look.y = 0f;
             t.rotation = Quaternion.LookRotation(look.normalized);
 
-            LocalPrim(PrimitiveType.Cube, "Stand", t, new Vector3(0f, 0.72f, 0f), new Vector3(1.1f, 0.04f, 0.5f), board);
+            // stand: two legs with feet and a crossbar
             for (int ix = -1; ix <= 1; ix += 2)
-                LocalPrim(PrimitiveType.Cube, "Leg", t, new Vector3(ix * 0.48f, 0.36f, 0f), new Vector3(0.04f, 0.72f, 0.4f), metal);
-            LocalPrim(PrimitiveType.Cube, "Back", t, new Vector3(0f, 1.05f, 0.08f), new Vector3(1.0f, 0.62f, 0.04f), board);
-            LocalPrim(PrimitiveType.Cube, "Panel YOU", t, new Vector3(-0.25f, 1.0f, 0.05f), new Vector3(0.44f, 0.42f, 0.02f), red);
-            LocalPrim(PrimitiveType.Cube, "Panel CPU", t, new Vector3(0.25f, 1.0f, 0.05f), new Vector3(0.44f, 0.42f, 0.02f), blue);
+            {
+                LocalPrim(PrimitiveType.Cube, "Leg", t, new Vector3(ix * 0.52f, 0.4f, 0.04f), new Vector3(0.05f, 0.8f, 0.05f), metal);
+                LocalPrim(PrimitiveType.Cube, "Foot", t, new Vector3(ix * 0.52f, 0.015f, 0.04f), new Vector3(0.08f, 0.03f, 0.5f), metal);
+            }
+            LocalPrim(PrimitiveType.Cube, "Crossbar", t, new Vector3(0f, 0.3f, 0.04f), new Vector3(1.04f, 0.04f, 0.04f), metal);
 
-            AddText(t, "Label YOU", new Vector3(-0.25f, 1.28f, 0.03f), "YOU", 0.11f, Color.white, font);
-            AddText(t, "Label CPU", new Vector3(0.25f, 1.28f, 0.03f), "CPU", 0.11f, Color.white, font);
-            TextMesh ps = AddText(t, "Score YOU", new Vector3(-0.25f, 0.99f, 0.035f), "0", 0.3f, Color.white, font);
-            TextMesh ais = AddText(t, "Score CPU", new Vector3(0.25f, 0.99f, 0.035f), "0", 0.3f, Color.white, font);
-            TextMesh sv = AddText(t, "Serve", new Vector3(0f, 0.78f, -0.1f), "< serve", 0.08f, new Color(1f, 0.85f, 0.3f), font);
-            sv.transform.localRotation = Quaternion.Euler(60f, 0f, 0f);
+            // housing with a gold trim line
+            LocalPrim(PrimitiveType.Cube, "Housing", t, new Vector3(0f, 1.12f, 0.04f), new Vector3(1.26f, 0.84f, 0.1f), board);
+            LocalPrim(PrimitiveType.Cube, "Trim Top", t, new Vector3(0f, 1.535f, -0.012f), new Vector3(1.26f, 0.012f, 0.004f), gold);
+            LocalPrim(PrimitiveType.Cube, "Trim Bottom", t, new Vector3(0f, 0.705f, -0.012f), new Vector3(1.26f, 0.012f, 0.004f), gold);
+            LocalPrim(PrimitiveType.Cube, "Divider", t, new Vector3(0f, 1.1f, -0.014f), new Vector3(0.012f, 0.7f, 0.004f), gold);
+
+            TextMesh[] scores = new TextMesh[2];
+            GameObject[] lights = new GameObject[2];
+            string[] names = { "YOU", "CPU" };
+            Material[] plates = { red, blue };
+            for (int i = 0; i < 2; i++)
+            {
+                float x = i == 0 ? -0.3f : 0.3f;
+                // name plate
+                LocalPrim(PrimitiveType.Cube, "Plate " + names[i], t, new Vector3(x, 1.43f, -0.015f), new Vector3(0.5f, 0.15f, 0.02f), plates[i]);
+                AddText(t, "Label " + names[i], new Vector3(x, 1.43f, -0.03f), names[i], 0.085f, Color.white, font, true);
+
+                // flip card with split line and binder rings
+                LocalPrim(PrimitiveType.Cube, "Card " + names[i], t, new Vector3(x, 1.06f, -0.015f), new Vector3(0.48f, 0.5f, 0.02f), card);
+                LocalPrim(PrimitiveType.Cube, "Split", t, new Vector3(x, 1.06f, -0.027f), new Vector3(0.48f, 0.006f, 0.003f), board);
+                for (int r = -1; r <= 1; r += 2)
+                {
+                    GameObject ring = LocalPrim(PrimitiveType.Cylinder, "Ring", t, new Vector3(x + r * 0.13f, 1.31f, -0.03f), new Vector3(0.035f, 0.01f, 0.035f), metal);
+                    ring.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                }
+                scores[i] = AddText(t, "Score " + names[i], new Vector3(x, 1.06f, -0.035f), "0", 0.27f, new Color(0.08f, 0.08f, 0.1f), font, true);
+
+                // serve light (lit for whoever serves)
+                float lx = x + (i == 0 ? -0.19f : 0.19f);
+                lights[i] = LocalPrim(PrimitiveType.Sphere, "Serve Light " + names[i], t, new Vector3(lx, 1.43f, -0.04f), Vector3.one * 0.06f, serveLight);
+            }
 
             PingPongScoreboard sb = root.AddComponent<PingPongScoreboard>();
             sb.game = game;
-            sb.playerScore = ps;
-            sb.aiScore = ais;
-            sb.serveMark = sv;
+            sb.playerScore = scores[0];
+            sb.aiScore = scores[1];
+            sb.playerServeLight = lights[0];
+            sb.aiServeLight = lights[1];
+        }
+
+        /// <summary>Approximate Arial Bold caps widths (in em) used to fit text into a given width.</summary>
+        static float FitCapHeight(string text, float maxWidth, float maxCap)
+        {
+            float em = 0f;
+            foreach (char ch in text.ToUpperInvariant())
+            {
+                if (ch == ' ') em += 0.28f;
+                else if (ch == 'I') em += 0.28f;
+                else if (ch == 'M' || ch == 'W') em += 0.86f;
+                else if (ch >= '0' && ch <= '9') em += 0.56f;
+                else em += 0.76f;
+            }
+            float capFromWidth = maxWidth / Mathf.Max(0.1f, em) * 0.716f;
+            return Mathf.Min(maxCap, capFromWidth);
         }
 
         static PingPongPaddle CreatePaddle(string name, Side side, Vector3 pos, Material red, Material black, Material wood)
@@ -481,7 +600,7 @@ namespace PingPong.EditorTools
             return l;
         }
 
-        static TextMesh AddText(Transform parent, string name, Vector3 localPos, string text, float height, Color color, Font font)
+        static TextMesh AddText(Transform parent, string name, Vector3 localPos, string text, float height, Color color, Font font, bool bold = false)
         {
             GameObject go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -490,8 +609,9 @@ namespace PingPong.EditorTools
             tm.text = text;
             tm.anchor = TextAnchor.MiddleCenter;
             tm.alignment = TextAlignment.Center;
-            tm.fontSize = 120;                  // 120 px = 12 units at characterSize 1
-            tm.characterSize = height / 9f;     // capital letter height ≈ height
+            tm.fontSize = 200;                          // big glyphs = crisper text
+            tm.characterSize = height / (0.716f * 20f); // capital letter height ≈ height (em = fontSize * 0.1 * characterSize)
+            tm.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal;
             tm.color = color;
             if (font != null)
             {
