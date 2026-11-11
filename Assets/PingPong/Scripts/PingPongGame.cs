@@ -25,6 +25,18 @@ namespace PingPong
         [Header("Computer")]
         [Range(0f, 1f)] public float aiDifficulty = 0.55f;
 
+        [Header("Menu")]
+        [Tooltip("When on, the match waits until the start menu calls StartMatch().")]
+        public bool waitForMenu;
+
+        /// <summary>True while a match is being played (false while the start menu is shown).</summary>
+        public bool IsActive { get; private set; }
+        /// <summary>Set by the pause menu; the game ignores input while paused.</summary>
+        public bool Paused { get; set; }
+        public bool IsGameOver { get { return state == State.GameOver; } }
+        public bool PlayerWon { get { return score[0] > score[1]; } }
+        public string DifficultyLabel { get { return DifficultyName(); } }
+
         /// <summary>Raised when a point is scored: (winner, game over).</summary>
         public event System.Action<Side, bool> PointScored;
 
@@ -49,6 +61,33 @@ namespace PingPong
             ball.Dead += OnBallDead;
             ApplyDifficulty();
             ResetGame();
+            IsActive = !waitForMenu;
+        }
+
+        /// <summary>Starts a new match (called by the start menu).</summary>
+        public void StartMatch(float difficulty)
+        {
+            aiDifficulty = difficulty;
+            ApplyDifficulty();
+            Paused = false;
+            ResetGame();
+            IsActive = true;
+        }
+
+        public void RestartMatch()
+        {
+            Paused = false;
+            ResetGame();
+            IsActive = true;
+        }
+
+        /// <summary>Stops the match and resets it (going back to the start menu).</summary>
+        public void StopMatch()
+        {
+            IsActive = false;
+            Paused = false;
+            ResetGame();
+            messageTimer = 0f;
         }
 
         void OnDestroy()
@@ -114,6 +153,8 @@ namespace PingPong
 
         void Update()
         {
+            if (!IsActive || Paused) return;
+
             int d = PPInput.DifficultyKey();
             if (d >= 0)
             {
@@ -156,7 +197,7 @@ namespace PingPong
 
                 case State.GameOver:
                     stateTimer -= Time.deltaTime;
-                    if (stateTimer <= 0f && PPInput.ActionPressed) ResetGame();
+                    if (stateTimer <= 0f && PPInput.ActionPressed && !waitForMenu) ResetGame();
                     break;
             }
         }
@@ -338,6 +379,7 @@ namespace PingPong
 
         void OnGUI()
         {
+            if (!IsActive) return;
             float s = Screen.height / 1080f;
             if (scoreStyle == null)
             {
@@ -372,7 +414,11 @@ namespace PingPong
             Label(new Rect(panel.x, panel.y + 6f + scoreSize.y + lineSize.y, panel.width, lineSize.y), diffText, smallStyle, new Color(1f, 1f, 1f, 0.75f));
             scoreStyle.fontSize = Mathf.Max(12, Mathf.RoundToInt(64 * s));
 
-            if (state == State.GameOver)
+            if (state == State.GameOver && waitForMenu)
+            {
+                // the menu shows the game-over screen
+            }
+            else if (state == State.GameOver)
             {
                 bool won = score[0] > score[1];
                 Label(new Rect(0, Screen.height * 0.38f, w, 90 * s), won ? "YOU WIN!" : "YOU LOSE", scoreStyle,
@@ -389,7 +435,7 @@ namespace PingPong
             }
 
             Label(new Rect(0, Screen.height - 40 * s, w, 30 * s),
-                "Mouse: move paddle   ·   Click/Space: serve   ·   1/2/3: difficulty   ·   R: restart",
+                "Mouse: move paddle   ·   Click/Space: serve   ·   1/2/3: difficulty   ·   R: restart" + (waitForMenu ? "   ·   Esc: pause" : ""),
                 smallStyle, new Color(1f, 1f, 1f, 0.7f));
         }
 

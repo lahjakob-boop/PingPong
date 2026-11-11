@@ -51,7 +51,7 @@ namespace PingPong
             if (dt <= 0f) return;
 
             if (controlledByAI) UpdateAI(dt);
-            else UpdatePlayer(dt);
+            else if (game == null || game.IsActive) UpdatePlayer(dt);
 
             Vector3 pos = transform.position;
             Velocity = (pos - lastPos) / dt;

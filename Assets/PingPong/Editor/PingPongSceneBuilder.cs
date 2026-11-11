@@ -268,6 +268,17 @@ namespace PingPong.EditorTools
             crowd.playerLoses = AssetDatabase.LoadAssetAtPath<AudioClip>(AudioDir + "/CrowdLose.wav");
             if (crowd.playerPoint == null) Debug.LogWarning("PingPong: crowd sounds not found in " + AudioDir);
 
+            // ---------------- start / pause / game-over menu
+            GameObject menuGo = new GameObject("Menu");
+            AudioSource menuAudio = menuGo.AddComponent<AudioSource>();
+            menuAudio.playOnAwake = false;
+            menuAudio.spatialBlend = 0f;
+            PingPongMenu menu = menuGo.AddComponent<PingPongMenu>();
+            menu.game = game;
+            menu.crowd = crowd;
+            menu.cam = cam;
+            game.waitForMenu = true;
+
             // ---------------- scoreboard next to the table
             BuildScoreboard(game, font, cam.transform.position, mBoard, mBoardRed, mBoardBlue, mMetal, mCard, mServeLight, mGold);
 

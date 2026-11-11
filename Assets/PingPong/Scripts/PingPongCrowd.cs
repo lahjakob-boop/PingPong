@@ -81,6 +81,20 @@ namespace PingPong
             Cheer(excitement, gameOver ? 6 : 3);
         }
 
+        /// <summary>Applause when a match starts.</summary>
+        public void PlayIntro()
+        {
+            if (cpuPoint != null && source != null)
+            {
+                source.Stop();
+                source.clip = cpuPoint;
+                source.volume = volume;
+                source.pitch = 1f;
+                source.Play();
+            }
+            Cheer(0.5f, 2);
+        }
+
         /// <summary>Makes a share of the spectators jump a few times.</summary>
         public void Cheer(float share, int maxJumps)
         {

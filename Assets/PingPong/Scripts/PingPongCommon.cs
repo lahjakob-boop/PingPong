@@ -74,6 +74,19 @@ namespace PingPong
             }
         }
 
+        /// <summary>Esc – pause / back.</summary>
+        public static bool EscapePressed
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                return Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
+#else
+                return Input.GetKeyDown(KeyCode.Escape);
+#endif
+            }
+        }
+
         /// <summary>Returns 0, 1 or 2 for keys 1, 2, 3 (difficulty), otherwise -1.</summary>
         public static int DifficultyKey()
         {

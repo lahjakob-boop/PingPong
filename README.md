@@ -7,10 +7,15 @@ A 3D table tennis game in Unity: you vs. the computer in a sports hall with blea
 1. Clone the repository (e.g. with GitHub Desktop) to a folder such as `Documents\GitHub\PingPong`.
 2. In **Unity Hub → Add → Add project from disk**, pick the `PingPong` folder.
    The project was made with Unity 6000.6.7f1 (Unity 2021.3 or newer should also work).
-3. When the project opens, click **PingPong → Build Scene** in the top menu.
-4. Press **Play ▶**.
+3. The game scene (`Assets/PingPong/Scenes/PingPong.unity`) opens automatically. If it doesn't, double-click it in the Project window, or click **PingPong → Build Scene** in the top menu to rebuild it.
+4. Press **Play ▶**. The start menu appears – click **PLAY**.
 
-The scene is saved to `Assets/PingPong/Scenes/PingPong.unity`, so you only need to build it once.
+## Menu
+
+- **Start menu** – PLAY, difficulty (Easy / Medium / Hard), How to play, Settings, Quit. The camera circles the hall in the background and flies down to the table when you press PLAY.
+- **Settings** – master volume and crowd volume (saved between sessions).
+- **Pause menu** (Esc) – Resume, Restart match, Settings, Main menu.
+- **Game over screen** – final score, Play again, Main menu.
 
 ## Controls
 
@@ -20,6 +25,7 @@ The scene is saved to `Assets/PingPong/Scenes/PingPong.unity`, so you only need 
 | Left click / Space | serve |
 | 1 / 2 / 3 | difficulty: easy / medium / hard |
 | R | restart |
+| Esc | pause menu |
 
 The paddle's hit area is bigger than the paddle itself. You can change it on **Player Paddle → Hit Size** in the Inspector.
 
@@ -40,9 +46,11 @@ The paddle's hit area is bigger than the paddle itself. You can change it on **P
 | `Scripts/PingPongPaddle.cs` | player paddle (mouse) and computer paddle (predicts the ball) |
 | `Scripts/PingPongGame.cs` | rules, scoring, serving, difficulty, on-screen UI |
 | `Scripts/PingPongScoreboard.cs` | scoreboard next to the table |
+| `Scripts/PingPongMenu.cs` | start menu, settings, pause menu and game-over screen |
 | `Scripts/PingPongCrowd.cs` | crowd cheers / applause on every point, spectators jump |
 | `Audio/*.wav` | crowd sounds (synthesised with `Tools/crowd_sfx.py`, no external samples) |
 | `Scripts/PingPongCommon.cs` | table dimensions and input (works with both the old and new Input System) |
 | `Editor/PingPongSceneBuilder.cs` | menu command that builds the whole scene (hall, textures, lights) |
+| `Editor/PingPongAutoOpenScene.cs` | opens the game scene automatically when the project is opened on a new computer |
 
-Settings like ball speed, difficulty and hitbox size can be changed in the Inspector on the **Game**, **Ball** and **Player Paddle** objects.
+Settings like ball speed, difficulty and hitbox size can be changed in the Inspector on the **Game**, **Ball** and **Player Paddle** objects. The menu title, subtitle and credits line can be changed on the **Menu** object.
