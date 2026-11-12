@@ -18,6 +18,11 @@ namespace PingPong.EditorTools
         const string TexDir = Root + "/Textures";
         const string SceneDir = Root + "/Scenes";
         const string AudioDir = Root + "/Audio";
+        const string MeshDir = Root + "/Meshes";
+
+        // layers used only by the offscreen cameras of the LED boards and the video screen
+        const int ScreenLayer = 29;
+        const int LedLayer = 30;
         const string ScenePath = SceneDir + "/PingPong.unity";
 
         // Hall
@@ -35,6 +40,7 @@ namespace PingPong.EditorTools
             EnsureFolder(MatDir);
             EnsureFolder(TexDir);
             EnsureFolder(SceneDir);
+            EnsureFolder(MeshDir);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -48,18 +54,20 @@ namespace PingPong.EditorTools
             Texture2D texConcrete = GetTex("Concrete", 256, 256, true, ConcretePixel);
             Texture2D texNet = GetTex("Net", 512, 48, false, NetPixel);
             Texture2D texBlob = GetTex("Blob", 64, 64, false, BlobPixel);
+            Texture2D texBlack = GetTex("Black", 4, 4, true, (px, py) => Color.black);
+            Texture2D texDots = GetTex("LedDots", 16, 16, true, LedDotPixel);
 
             // ---------------- materials
-            Material mSport = GetMat("SportFloor", new Color(1f, 1f, 1f), 0.25f, texSport, new Vector2(5f, 8f));
-            Material mParquet = GetMat("Parquet", new Color(1f, 1f, 1f), 0.35f, texParquet, new Vector2(6f, 7f));
-            Material mWall = GetMat("Wall", new Color(0.86f, 0.88f, 0.9f), 0.05f, texConcrete, new Vector2(6f, 3f));
-            Material mWoodPanel = GetMat("WoodPanel", new Color(0.85f, 0.75f, 0.65f), 0.3f, texParquet, new Vector2(8f, 0.6f));
-            Material mCeiling = GetMat("Ceiling", new Color(0.3f, 0.31f, 0.34f), 0.05f);
-            Material mBeam = GetMat("Beam", new Color(0.18f, 0.19f, 0.21f), 0.4f);
+            Material mSport = GetMat("SportFloor", new Color(1f, 1f, 1f), 0.12f, texSport, new Vector2(5f, 8f));
+            Material mParquet = GetMat("ArenaFloor", new Color(0.09f, 0.09f, 0.1f), 0.25f, texConcrete, new Vector2(10f, 10f));
+            Material mWall = GetMat("Wall", new Color(0.05f, 0.055f, 0.07f), 0.05f, texConcrete, new Vector2(6f, 3f));
+            Material mWoodPanel = GetMat("WoodPanel", new Color(0.14f, 0.11f, 0.09f), 0.3f, texParquet, new Vector2(8f, 0.6f));
+            Material mCeiling = GetMat("Ceiling", new Color(0.02f, 0.022f, 0.03f), 0.05f);
+            Material mBeam = GetMat("Beam", new Color(0.06f, 0.065f, 0.075f), 0.4f);
             Material mWindow = GetMat("Window", new Color(0.55f, 0.7f, 0.9f), 0.9f, null, Vector2.zero, new Color(0.45f, 0.6f, 0.85f));
             Material mLightPanel = GetMat("LightPanel", Color.white, 0.5f, null, Vector2.zero, new Color(1.6f, 1.55f, 1.4f));
             Material mFrame = GetMat("Frame", new Color(0.2f, 0.21f, 0.23f), 0.3f);
-            Material mBarrier = GetMat("Barrier", new Color(0.06f, 0.14f, 0.42f), 0.35f);
+            Material mBarrier = GetMat("Barrier", new Color(0.03f, 0.035f, 0.05f), 0.35f);
             Material mBarrierStripe = GetMat("BarrierStripe", new Color(0.95f, 0.95f, 0.95f), 0.3f);
             Material mBarrierAccent = GetMat("BarrierAccent", new Color(0.95f, 0.55f, 0.1f), 0.3f);
             Material mTable = GetMat("Table", new Color(0.04f, 0.22f, 0.5f), 0.4f);
@@ -67,11 +75,12 @@ namespace PingPong.EditorTools
             Material mLine = GetMat("Line", Color.white, 0.3f);
             Material mMetal = GetMat("Metal", new Color(0.15f, 0.15f, 0.17f), 0.6f, null, Vector2.zero, null, 0.6f);
             Material mWood = GetMat("Wood", new Color(0.78f, 0.58f, 0.36f), 0.3f);
-            Material mRubberRed = GetMat("RubberRed", new Color(0.8f, 0.08f, 0.08f), 0.25f);
-            Material mRubberBlack = GetMat("RubberBlack", new Color(0.06f, 0.06f, 0.07f), 0.25f);
+            // your paddle is red on both sides, the CPU paddle blue (same colours as on the video screen)
+            Material mRubberYou = GetMat("RubberYou", new Color(0.86f, 0.1f, 0.08f), 0.3f, null, default(Vector2), new Color(0.3f, 0.025f, 0.02f));
+            Material mRubberCpu = GetMat("RubberCpu", new Color(0.12f, 0.34f, 0.95f), 0.3f, null, default(Vector2), new Color(0.03f, 0.08f, 0.3f));
             Material mBall = GetMat("Ball", new Color(1f, 0.55f, 0.12f), 0.65f, null, Vector2.zero, new Color(0.35f, 0.14f, 0f));
-            Material mStep = GetMat("BleacherStep", new Color(0.55f, 0.56f, 0.58f), 0.1f, texConcrete, new Vector2(4f, 1f));
-            Material mSeat = GetMat("Seat", new Color(0.1f, 0.3f, 0.75f), 0.4f);
+            Material mStep = GetMat("BleacherStep", new Color(0.16f, 0.17f, 0.2f), 0.1f, texConcrete, new Vector2(4f, 1f));
+            Material mSeat = GetMat("Seat", new Color(0.07f, 0.12f, 0.3f), 0.4f);
             Material mBoard = GetMat("Board", new Color(0.05f, 0.05f, 0.06f), 0.4f);
             Material mBoardRed = GetMat("BoardRed", new Color(0.6f, 0.06f, 0.06f), 0.3f);
             Material mBoardBlue = GetMat("BoardBlue", new Color(0.05f, 0.12f, 0.45f), 0.3f);
@@ -90,6 +99,25 @@ namespace PingPong.EditorTools
             Material mBlob = GetSpriteMat("BallShadow", texBlob, new Color(0f, 0f, 0f, 0.55f));
             Material mTrail = GetSpriteMat("Trail", null, Color.white);
 
+            // arena effects
+            ArenaMats am = new ArenaMats();
+            am.led = GetUnlitMat("LedBoard", "Unlit/Texture", Color.white, texBlack, Vector2.one);
+            am.ledDots = GetUnlitMat("LedPixels", "Unlit/Transparent", Color.white, texDots, new Vector2(80f, 24f));
+            am.screen = GetUnlitMat("VideoScreen", "Unlit/Texture", Color.white, texBlack, Vector2.one);
+            am.screenDots = GetUnlitMat("VideoScreenPixels", "Unlit/Transparent", Color.white, texDots, new Vector2(150f, 47f));
+            am.screenGlow = GetSpriteMat("VideoScreenGlow", texBlob, new Color(0.25f, 0.5f, 1f, 0.5f));
+            am.bezel = GetMat("Bezel", new Color(0.03f, 0.03f, 0.035f), 0.5f);
+            am.lens = GetMat("SpotLens", Color.white, 0.9f, null, Vector2.zero, new Color(3f, 2.9f, 2.6f));
+            am.metal = mMetal;
+            am.flash = GetSpriteMat("CameraFlash", texBlob, Color.white);
+            am.cone = GetSpriteMat("LightCone", null, new Color(1f, 0.96f, 0.88f, 0.11f));
+            am.rigNavy = GetUnlitMat("Rig_Navy", "Unlit/Color", new Color(0.035f, 0.09f, 0.24f), null, Vector2.one);
+            am.rigNavyDark = GetUnlitMat("Rig_NavyDark", "Unlit/Color", new Color(0.015f, 0.045f, 0.13f), null, Vector2.one);
+            am.rigBar = GetUnlitMat("Rig_Bar", "Unlit/Color", new Color(1f, 0.5f, 0.08f), null, Vector2.one);
+            am.dotRed = GetSpriteMat("Rig_DotRed", texBlob, new Color(1f, 0.15f, 0.12f, 1f));
+            am.dotBlue = GetSpriteMat("Rig_DotBlue", texBlob, new Color(0.25f, 0.5f, 1f, 1f));
+            Mesh coneMesh = GetConeMesh();
+
             Material[] shirts =
             {
                 GetMat("Shirt0", new Color(0.8f, 0.15f, 0.15f), 0.1f), GetMat("Shirt1", new Color(0.15f, 0.35f, 0.8f), 0.1f),
@@ -104,15 +132,19 @@ namespace PingPong.EditorTools
             };
 
             // ---------------- lighting and quality
+            // dark arena: almost no ambient light, a little haze, the court lit by spotlights
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.62f, 0.65f, 0.72f);
-            RenderSettings.ambientEquatorColor = new Color(0.45f, 0.42f, 0.4f);
-            RenderSettings.ambientGroundColor = new Color(0.22f, 0.18f, 0.16f);
-            RenderSettings.fog = false;
+            RenderSettings.ambientSkyColor = new Color(0.11f, 0.12f, 0.16f);
+            RenderSettings.ambientEquatorColor = new Color(0.07f, 0.07f, 0.09f);
+            RenderSettings.ambientGroundColor = new Color(0.04f, 0.035f, 0.035f);
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.ExponentialSquared;
+            RenderSettings.fogColor = new Color(0.012f, 0.016f, 0.028f);
+            RenderSettings.fogDensity = 0.035f;
             QualitySettings.shadowDistance = 25f;
             QualitySettings.shadowResolution = ShadowResolution.VeryHigh;
             QualitySettings.shadowCascades = 2;
-            QualitySettings.pixelLightCount = 8;
+            QualitySettings.pixelLightCount = 12;
             QualitySettings.antiAliasing = 4;
 
             // ---------------- hall
@@ -132,54 +164,38 @@ namespace PingPong.EditorTools
             Prim(PrimitiveType.Cube, "Wood Panel Left", h, new Vector3(-HallX + 0.02f, 0.6f, 0f), new Vector3(0.06f, 1.2f, HallZ * 2f), mWoodPanel);
             Prim(PrimitiveType.Cube, "Wood Panel Right", h, new Vector3(HallX - 0.02f, 0.6f, 0f), new Vector3(0.06f, 1.2f, HallZ * 2f), mWoodPanel);
 
-            // windows (upper band) with frames
-            BuildWindowBand(h, new Vector3(0f, 3.9f, HallZ - 0.03f), Vector3.right, HallX * 2f - 1f, 1.6f, mWindow, mFrame);
-            BuildWindowBand(h, new Vector3(-HallX + 0.03f, 4.6f, 0f), Vector3.forward, HallZ * 2f - 1f, 1.8f, mWindow, mFrame);
-            BuildWindowBand(h, new Vector3(HallX - 0.03f, 4.6f, 0f), Vector3.forward, HallZ * 2f - 1f, 1.8f, mWindow, mFrame);
-
             // ceiling, beams and light panels
             Prim(PrimitiveType.Cube, "Ceiling", h, new Vector3(0f, HallH + 0.1f, 0f), new Vector3(HallX * 2f + 0.6f, 0.2f, HallZ * 2f + 0.6f), mCeiling);
             for (int i = -3; i <= 3; i++)
                 Prim(PrimitiveType.Cube, "Beam", h, new Vector3(0f, HallH - 0.25f, i * 3f), new Vector3(HallX * 2f, 0.4f, 0.2f), mBeam);
-            for (int ix = -1; ix <= 1; ix++)
-                for (int iz = -2; iz <= 2; iz++)
-                    Prim(PrimitiveType.Cube, "Light Panel", h, new Vector3(ix * 4.5f, HallH - 0.05f, iz * 3f + 1.5f), new Vector3(2.2f, 0.06f, 0.7f), mLightPanel);
 
             // ---------------- barriers around the court
-            GameObject barriers = new GameObject("Barriers");
-            BarrierLine(barriers.transform, new Vector3(-CourtX, 0f, -CourtZ), new Vector3(-CourtX, 0f, CourtZ), 6, mBarrier, mBarrierStripe, mBarrierAccent);
-            BarrierLine(barriers.transform, new Vector3(CourtX, 0f, -CourtZ), new Vector3(CourtX, 0f, CourtZ), 6, mBarrier, mBarrierStripe, mBarrierAccent);
-            BarrierLine(barriers.transform, new Vector3(-CourtX, 0f, CourtZ), new Vector3(CourtX, 0f, CourtZ), 4, mBarrier, mBarrierStripe, mBarrierAccent);
-            BarrierLine(barriers.transform, new Vector3(-CourtX, 0f, -CourtZ), new Vector3(CourtX, 0f, -CourtZ), 4, mBarrier, mBarrierStripe, mBarrierAccent);
+            // One long LED strip runs left side -> far side -> right side, so text scrolls around the court.
+            GameObject barriers = new GameObject("LED Boards");
+            var ledPanels = new System.Collections.Generic.List<PingPongLedPanel>();
+            float stripLen = CourtZ * 2f * 2f + CourtX * 2f;
+            float stripPos = 0f;
+            stripPos = LedLine(barriers.transform, new Vector3(-CourtX, 0f, -CourtZ), new Vector3(-CourtX, 0f, CourtZ), 6, mBarrier, mMetal, am, stripPos, stripLen, ledPanels);
+            stripPos = LedLine(barriers.transform, new Vector3(-CourtX, 0f, CourtZ), new Vector3(CourtX, 0f, CourtZ), 4, mBarrier, mMetal, am, stripPos, stripLen, ledPanels);
+            LedLine(barriers.transform, new Vector3(CourtX, 0f, CourtZ), new Vector3(CourtX, 0f, -CourtZ), 6, mBarrier, mMetal, am, stripPos, stripLen, ledPanels);
+            BarrierLine(barriers.transform, new Vector3(-CourtX, 0f, -CourtZ), new Vector3(CourtX, 0f, -CourtZ), 4, mBarrier, mMetal, mBarrier);
 
-            // ---------------- bleachers with spectators (left)
-            Transform[] spectators = BuildBleachers(new Vector3(-5.1f, 0f, 2f), 12f, 4, mStep, mSeat, shirts, skins);
+            // ---------------- stands with spectators (left, right and behind the CPU)
+            var people = new System.Collections.Generic.List<Transform>();
+            people.AddRange(BuildStand("Stand Left", new Vector3(-5.1f, 0f, 2f), 0f, 12f, 4, 0.42f, mStep, mSeat, shirts, skins, 67));
+            people.AddRange(BuildStand("Stand Right", new Vector3(5.1f, 0f, 2f), 180f, 12f, 4, 0.42f, mStep, mSeat, shirts, skins, 68));
+            people.AddRange(BuildStand("Stand Far", new Vector3(0f, 0f, 6.75f), 90f, 10f, 2, 0.3f, mStep, mSeat, shirts, skins, 69));
+            Transform[] spectators = people.ToArray();
 
-            // ---------------- extra props (right and back)
-            GameObject props = new GameObject("Props");
-            Transform pr = props.transform;
-            GameObject sideTable = BuildTable("Practice Table", pr, new Vector3(6.1f, 0f, 5.2f), 90f, mTable, mTableEdge, mLine, mMetal, mNet);
-            BarrierLine(pr, new Vector3(4.2f, 0f, 3.2f), new Vector3(8.4f, 0f, 3.2f), 2, mBarrier, mBarrierStripe, mBarrierAccent);
-            sideTable.transform.SetParent(pr, true);
-
-            BuildBench(pr, new Vector3(4.6f, 0f, -0.6f), mWood, mMetal, mTowel, mBottle);
-            BuildPlant(pr, new Vector3(-8.2f, 0f, 9.2f), mPot, mPlant);
-            BuildPlant(pr, new Vector3(8.2f, 0f, 9.2f), mPot, mPlant);
-            BuildPlant(pr, new Vector3(8.2f, 0f, -2f), mPot, mPlant);
-
-            // banners on the far wall
             Font font = GetFont();
-            BannerStyle bs = new BannerStyle { trim = mBannerTrim, frame = mFrame, metal = mMetal, gold = mGold, red = mRubberRed, black = mRubberBlack, wood = mWood, ball = mBall };
-            BuildBanner(pr, new Vector3(-5.1f, 2.05f, HallZ - 0.1f), mBannerRed, "PING PONG", true, font, bs);
-            BuildBanner(pr, new Vector3(5.1f, 2.05f, HallZ - 0.1f), mBannerBlue, "FAIR PLAY", false, font, bs);
 
             // ---------------- main table
             BuildTable("Table", null, Vector3.zero, 0f, mTable, mTableEdge, mLine, mMetal, mNet);
 
             // ---------------- paddles
             float paddleZ = Table.HalfLength + 0.18f;
-            PingPongPaddle player = CreatePaddle("Player Paddle", Side.Player, new Vector3(0f, 1.0f, -paddleZ), mRubberRed, mRubberBlack, mWood);
-            PingPongPaddle ai = CreatePaddle("CPU Paddle", Side.AI, new Vector3(0f, 1.0f, paddleZ), mRubberRed, mRubberBlack, mWood);
+            PingPongPaddle player = CreatePaddle("Player Paddle", Side.Player, new Vector3(0f, 1.0f, -paddleZ), mRubberYou, mRubberYou, mWood);
+            PingPongPaddle ai = CreatePaddle("CPU Paddle", Side.AI, new Vector3(0f, 1.0f, paddleZ), mRubberCpu, mRubberCpu, mWood);
             ai.controlledByAI = true;
             ai.hitSize = new Vector2(0.2f, 0.2f);
 
@@ -210,20 +226,34 @@ namespace PingPong.EditorTools
             blobR.receiveShadows = false;
             ball.blobShadow = blob.transform;
 
-            // ---------------- lights
+            // ---------------- lights: two spotlights from trusses, a table light and a soft court wash
             GameObject lights = new GameObject("Lights");
-            Light sun = AddLight(lights.transform, "Main Light", LightType.Directional, new Vector3(0f, 6f, 0f), new Vector3(78f, -15f, 0f), new Color(1f, 0.96f, 0.9f), 0.55f, LightShadows.Soft);
-            sun.shadowStrength = 0.7f;
-            Light spotA = AddLight(lights.transform, "Spotlight 1", LightType.Spot, new Vector3(0f, 5.6f, -1.1f), new Vector3(90f, 0f, 0f), new Color(1f, 0.97f, 0.92f), 2.0f, LightShadows.Soft);
-            spotA.range = 12f;
-            spotA.spotAngle = 70f;
-            Light spotB = AddLight(lights.transform, "Spotlight 2", LightType.Spot, new Vector3(0f, 5.6f, 1.1f), new Vector3(90f, 0f, 0f), new Color(1f, 0.97f, 0.92f), 2.0f, LightShadows.None);
-            spotB.range = 12f;
-            spotB.spotAngle = 70f;
-            Light fill = AddLight(lights.transform, "Fill Light", LightType.Directional, new Vector3(0f, 5f, 0f), new Vector3(25f, 160f, 0f), new Color(0.75f, 0.82f, 1f), 0.25f, LightShadows.None);
-            fill.name = "Fill Light";
-            Light stands = AddLight(lights.transform, "Bleacher Light", LightType.Point, new Vector3(-6.5f, 4.5f, 3f), Vector3.zero, new Color(1f, 0.92f, 0.8f), 1.2f, LightShadows.None);
-            stands.range = 9f;
+            Transform lt = lights.transform;
+            AddLight(lt, "Arena Ambient", LightType.Directional, new Vector3(0f, 6f, 0f), new Vector3(70f, -20f, 0f), new Color(0.75f, 0.8f, 1f), 0.12f, LightShadows.None);
+            Vector3 aim = new Vector3(0f, Table.Height, 0.2f);
+            Vector3 spotLeftPos = new Vector3(-3.4f, 6.6f, -1.6f), spotRightPos = new Vector3(3.4f, 6.6f, -1.6f);
+            Light spotL = AddSpot(lt, "Spotlight Left", spotLeftPos, aim, 38f, 16f, 3.8f, LightShadows.Soft);
+            spotL.shadowStrength = 0.75f;
+            AddSpot(lt, "Spotlight Right", spotRightPos, aim, 38f, 16f, 3.8f, LightShadows.None);
+            AddSpot(lt, "Table Light", new Vector3(0f, 6.8f, 0.1f), new Vector3(0f, 0f, 0.1f), 34f, 12f, 1.8f, LightShadows.None);
+            AddSpot(lt, "Court Wash", new Vector3(0f, 7f, 0.5f), new Vector3(0f, 0f, 0.5f), 105f, 14f, 1.3f, LightShadows.None);
+            AddLight(lt, "Stand Light Left", LightType.Point, new Vector3(-6.3f, 3.4f, 2f), Vector3.zero, new Color(1f, 0.88f, 0.75f), 0.32f, LightShadows.None).range = 7f;
+            AddLight(lt, "Stand Light Right", LightType.Point, new Vector3(6.3f, 3.4f, 2f), Vector3.zero, new Color(1f, 0.88f, 0.75f), 0.32f, LightShadows.None).range = 7f;
+            AddLight(lt, "Stand Light Far", LightType.Point, new Vector3(0f, 2.8f, 8.2f), Vector3.zero, new Color(1f, 0.88f, 0.75f), 0.28f, LightShadows.None).range = 6f;
+            Light[] ledSpill =
+            {
+                AddLight(lt, "LED Spill Left", LightType.Point, new Vector3(-3.2f, 0.45f, 2f), Vector3.zero, new Color(1f, 0.5f, 0.1f), 0.35f, LightShadows.None),
+                AddLight(lt, "LED Spill Far", LightType.Point, new Vector3(0f, 0.45f, 5.8f), Vector3.zero, new Color(1f, 0.5f, 0.1f), 0.35f, LightShadows.None),
+                AddLight(lt, "LED Spill Right", LightType.Point, new Vector3(3.2f, 0.45f, 2f), Vector3.zero, new Color(1f, 0.5f, 0.1f), 0.35f, LightShadows.None),
+            };
+            foreach (Light l in ledSpill) l.range = 3.2f;
+
+            // trusses, light fixtures and visible light beams
+            Prim(PrimitiveType.Cube, "Truss", lt, new Vector3(0f, 6.85f, -1.6f), new Vector3(8.6f, 0.12f, 0.12f), mBeam);
+            BuildSpotFixture(lt, spotLeftPos, aim, mMetal, am.lens);
+            BuildSpotFixture(lt, spotRightPos, aim, mMetal, am.lens);
+            BuildCone(lt, spotLeftPos, aim, 15f, am.cone, coneMesh);
+            BuildCone(lt, spotRightPos, aim, 15f, am.cone, coneMesh);
 
             // ---------------- camera
             GameObject camGo = new GameObject("Main Camera");
@@ -234,7 +264,8 @@ namespace PingPong.EditorTools
             cam.nearClipPlane = 0.05f;
             cam.farClipPlane = 80f;
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.1f, 0.11f, 0.14f);
+            cam.backgroundColor = new Color(0.01f, 0.012f, 0.02f);
+            cam.cullingMask = ~((1 << LedLayer) | (1 << ScreenLayer));
             cam.allowMSAA = true;
             // The camera is high enough that your paddle doesn't block the opponent's side.
             camGo.transform.position = new Vector3(0f, 2.2f, -3.5f);
@@ -279,8 +310,8 @@ namespace PingPong.EditorTools
             menu.cam = cam;
             game.waitForMenu = true;
 
-            // ---------------- scoreboard next to the table
-            BuildScoreboard(game, font, cam.transform.position, mBoard, mBoardRed, mBoardBlue, mMetal, mCard, mServeLight, mGold);
+            // ---------------- LED boards content, big video screen and camera flashes
+            BuildArenaFx(game, cam, font, ledPanels, stripLen, spectators, ledSpill, am);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -577,7 +608,307 @@ namespace PingPong.EditorTools
             return Mathf.Min(maxCap, capFromWidth);
         }
 
-        static PingPongPaddle CreatePaddle(string name, Side side, Vector3 pos, Material red, Material black, Material wood)
+        // =================================================================== dark arena parts
+
+        class ArenaMats
+        {
+            public Material led, ledDots, screen, screenDots, screenGlow, bezel, lens, metal, flash, cone;
+            public Material rigNavy, rigNavyDark, rigBar, dotRed, dotBlue;
+        }
+
+        /// <summary>A row of LED boards; returns where the strip continues.</summary>
+        static float LedLine(Transform parent, Vector3 a, Vector3 b, int segments, Material body, Material cap, ArenaMats am,
+            float uStart, float stripLen, System.Collections.Generic.List<PingPongLedPanel> panels)
+        {
+            Vector3 dir = b - a;
+            float len = dir.magnitude;
+            dir /= len;
+            float seg = len / segments;
+            Quaternion rot = Quaternion.LookRotation(Vector3.Cross(dir, Vector3.up)); // local -Z faces the court
+            for (int i = 0; i < segments; i++)
+            {
+                GameObject s = new GameObject("LED Board");
+                s.transform.SetParent(parent, false);
+                s.transform.position = a + dir * (seg * (i + 0.5f));
+                s.transform.rotation = rot;
+                float w = seg - 0.04f;
+                LocalPrim(PrimitiveType.Cube, "Housing", s.transform, new Vector3(0f, 0.37f, 0.01f), new Vector3(w, 0.68f, 0.06f), body);
+                LocalPrim(PrimitiveType.Cube, "Cap", s.transform, new Vector3(0f, 0.72f, 0.01f), new Vector3(w, 0.03f, 0.07f), cap);
+                LocalPrim(PrimitiveType.Cube, "Foot", s.transform, new Vector3(-w * 0.4f, 0.02f, 0.12f), new Vector3(0.06f, 0.04f, 0.32f), body);
+                LocalPrim(PrimitiveType.Cube, "Foot", s.transform, new Vector3(w * 0.4f, 0.02f, 0.12f), new Vector3(0.06f, 0.04f, 0.32f), body);
+
+                GameObject face = LocalPrim(PrimitiveType.Quad, "LED", s.transform, new Vector3(0f, 0.37f, -0.022f), new Vector3(w, 0.6f, 1f), am.led);
+                GameObject px = LocalPrim(PrimitiveType.Quad, "Pixels", s.transform, new Vector3(0f, 0.37f, -0.024f), new Vector3(w, 0.6f, 1f), am.ledDots);
+                NoShadows(face);
+                NoShadows(px);
+
+                PingPongLedPanel panel = s.AddComponent<PingPongLedPanel>();
+                panel.face = face.GetComponent<Renderer>();
+                panel.u0 = (uStart + seg * i) / stripLen;
+                panel.u1 = (uStart + seg * (i + 1)) / stripLen;
+                panels.Add(panel);
+            }
+            return uStart + len;
+        }
+
+        /// <summary>Stepped stand with spectators. Built in local space (rows go towards local -X), then turned by yaw.</summary>
+        static Transform[] BuildStand(string name, Vector3 frontCenter, float yaw, float length, int rows, float rise,
+            Material step, Material seat, Material[] shirts, Material[] skins, int seed)
+        {
+            var people = new System.Collections.Generic.List<Transform>();
+            GameObject root = new GameObject(name);
+            Transform t = root.transform;
+            t.position = frontCenter;
+            t.rotation = Quaternion.Euler(0f, yaw, 0f);
+            System.Random rng = new System.Random(seed);
+            const float depth = 0.9f;
+
+            for (int r = 0; r < rows; r++)
+            {
+                float x = -r * depth - depth * 0.5f;
+                float top = rise * (r + 1);
+                LocalPrim(PrimitiveType.Cube, "Step", t, new Vector3(x, top * 0.5f, 0f), new Vector3(depth, top, length), step);
+                LocalPrim(PrimitiveType.Cube, "Seat", t, new Vector3(x + 0.18f, top + 0.04f, 0f), new Vector3(0.38f, 0.08f, length - 0.2f), seat);
+
+                for (float z = -length * 0.5f + 0.4f; z < length * 0.5f - 0.3f; z += 0.62f)
+                {
+                    if (rng.NextDouble() < 0.3) continue; // empty seat
+                    float jitter = (float)(rng.NextDouble() - 0.5) * 0.12f;
+                    Material shirt = shirts[rng.Next(shirts.Length)];
+                    Material skin = skins[rng.Next(skins.Length)];
+                    float bodyH = 0.6f + (float)rng.NextDouble() * 0.12f;
+
+                    GameObject person = new GameObject("Spectator");
+                    person.transform.SetParent(t, false);
+                    person.transform.localPosition = new Vector3(x + 0.12f, top + 0.08f, z + jitter);
+                    person.transform.localRotation = Quaternion.identity;
+                    Transform pt = person.transform;
+                    LocalPrim(PrimitiveType.Capsule, "Body", pt, new Vector3(0f, bodyH * 0.5f, 0f), new Vector3(0.4f, bodyH * 0.5f, 0.3f), shirt);
+                    LocalPrim(PrimitiveType.Sphere, "Head", pt, new Vector3(0.02f, bodyH + 0.1f, 0f), Vector3.one * 0.21f, skin);
+                    LocalPrim(PrimitiveType.Cube, "Legs", pt, new Vector3(0.28f, 0.05f, 0f), new Vector3(0.36f, 0.12f, 0.26f), shirts[5]);
+                    people.Add(pt);
+                }
+            }
+            return people.ToArray();
+        }
+
+        static Light AddSpot(Transform parent, string name, Vector3 pos, Vector3 target, float angle, float range, float intensity, LightShadows shadows)
+        {
+            Light l = AddLight(parent, name, LightType.Spot, pos, Vector3.zero, new Color(1f, 0.97f, 0.92f), intensity, shadows);
+            l.transform.rotation = Quaternion.LookRotation(target - pos);
+            l.spotAngle = angle;
+            l.range = range;
+            return l;
+        }
+
+        static void BuildSpotFixture(Transform parent, Vector3 pos, Vector3 target, Material housing, Material lens)
+        {
+            Vector3 d = (target - pos).normalized;
+            Quaternion along = Quaternion.LookRotation(d) * Quaternion.Euler(90f, 0f, 0f); // cylinder axis along d
+            GameObject body = Prim(PrimitiveType.Cylinder, "Spot Fixture", parent, pos - d * 0.18f, new Vector3(0.36f, 0.22f, 0.36f), housing);
+            body.transform.rotation = along;
+            GameObject glass = Prim(PrimitiveType.Cylinder, "Spot Lens", parent, pos + d * 0.05f, new Vector3(0.3f, 0.01f, 0.3f), lens);
+            glass.transform.rotation = along;
+            NoShadows(glass);
+        }
+
+        static void BuildCone(Transform parent, Vector3 from, Vector3 to, float halfAngle, Material mat, Mesh mesh)
+        {
+            GameObject go = new GameObject("Light Beam");
+            go.transform.SetParent(parent, false);
+            go.transform.position = from;
+            Vector3 d = to - from;
+            float len = d.magnitude;
+            go.transform.rotation = Quaternion.LookRotation(d);
+            float r = len * Mathf.Tan(halfAngle * Mathf.Deg2Rad);
+            go.transform.localScale = new Vector3(r, r, len);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            MeshRenderer mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = mat;
+            mr.shadowCastingMode = ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+        }
+
+        /// <summary>Open cone (tip at z=0, radius 1 at z=1) whose vertex alpha fades towards the bottom.</summary>
+        static Mesh GetConeMesh()
+        {
+            string path = MeshDir + "/LightBeam.asset";
+            if (AssetDatabase.LoadAssetAtPath<Mesh>(path) != null) AssetDatabase.DeleteAsset(path);
+            const int seg = 40;
+            const float tip = 0.06f;
+            var verts = new System.Collections.Generic.List<Vector3>();
+            var cols = new System.Collections.Generic.List<Color>();
+            var tris = new System.Collections.Generic.List<int>();
+            for (int i = 0; i <= seg; i++)
+            {
+                float a = i / (float)seg * Mathf.PI * 2f;
+                float cx = Mathf.Cos(a), cy = Mathf.Sin(a);
+                verts.Add(new Vector3(cx * tip, cy * tip, 0f));
+                cols.Add(new Color(1f, 1f, 1f, 1f));
+                verts.Add(new Vector3(cx, cy, 1f));
+                cols.Add(new Color(1f, 1f, 1f, 0f));
+            }
+            for (int i = 0; i < seg; i++)
+            {
+                int k = i * 2;
+                tris.Add(k); tris.Add(k + 1); tris.Add(k + 2);
+                tris.Add(k + 2); tris.Add(k + 1); tris.Add(k + 3);
+            }
+            Mesh m = new Mesh();
+            m.name = "LightBeam";
+            m.SetVertices(verts);
+            m.SetColors(cols);
+            m.SetTriangles(tris, 0);
+            m.RecalculateNormals();
+            m.RecalculateBounds();
+            AssetDatabase.CreateAsset(m, path);
+            return m;
+        }
+
+        /// <summary>LED strip rig, video screen (world + rig) and camera flashes, all driven by PingPongArena.</summary>
+        static void BuildArenaFx(PingPongGame game, Camera cam, Font font, System.Collections.Generic.List<PingPongLedPanel> panels,
+            float stripLen, Transform[] spectators, Light[] spill, ArenaMats am)
+        {
+            GameObject root = new GameObject("Arena FX");
+            PingPongArena arena = root.AddComponent<PingPongArena>();
+            arena.game = game;
+            arena.mainCamera = cam;
+            arena.ledPanels = panels.ToArray();
+            arena.ledSpill = spill;
+            arena.stripLength = stripLen;
+            arena.spectators = spectators;
+
+            // ---- LED strip: one offscreen camera films a row of texts, the boards show the result
+            GameObject led = new GameObject("LED Strip Rig");
+            led.transform.SetParent(root.transform, false);
+            led.transform.position = new Vector3(0f, -200f, 0f);
+            arena.ledCamera = MakeRigCamera("LED Camera", led.transform, new Vector3(stripLen * 0.5f, 0f, -5f), 0.5f, LedLayer, Color.black);
+            int count = arena.idleTexts.Length;
+            arena.ledItems = new TextMesh[count];
+            for (int i = 0; i < count; i++)
+            {
+                Color c = i % 2 == 0 ? new Color(1f, 0.5f, 0.08f) : new Color(0.95f, 0.96f, 1f);
+                arena.ledItems[i] = AddText(led.transform, "LED Text", new Vector3(stripLen * i / count, 0f, 0f), arena.idleTexts[i], 0.46f, c, font, true);
+            }
+            SetLayer(led, LedLayer);
+
+            // ---- video screen hanging behind the CPU side, above the far stand
+            float sw = 4.6f, sh = 4.6f / 3.2f;
+            GameObject scr = new GameObject("Video Screen");
+            scr.transform.SetParent(root.transform, false);
+            scr.transform.position = new Vector3(0f, 2.32f, 8.75f);
+            Transform st = scr.transform;
+            LocalPrim(PrimitiveType.Cube, "Bezel", st, new Vector3(0f, 0f, 0.04f), new Vector3(sw + 0.22f, sh + 0.22f, 0.12f), am.bezel);
+            NoShadows(LocalPrim(PrimitiveType.Quad, "Glow", st, new Vector3(0f, 0f, 0.11f), new Vector3(sw * 1.7f, sh * 2.4f, 1f), am.screenGlow));
+            GameObject face = LocalPrim(PrimitiveType.Quad, "Screen", st, new Vector3(0f, 0f, -0.025f), new Vector3(sw, sh, 1f), am.screen);
+            NoShadows(face);
+            NoShadows(LocalPrim(PrimitiveType.Quad, "Pixels", st, new Vector3(0f, 0f, -0.027f), new Vector3(sw, sh, 1f), am.screenDots));
+            LocalPrim(PrimitiveType.Cube, "Truss", st, new Vector3(0f, sh * 0.5f + 0.2f, 0.02f), new Vector3(sw + 0.6f, 0.08f, 0.08f), am.metal);
+            for (int i = 0; i <= 8; i++)
+                NoShadows(LocalPrim(PrimitiveType.Sphere, "Lamp", st, new Vector3(-sw * 0.5f + i * sw / 8f, sh * 0.5f + 0.2f, -0.06f), Vector3.one * 0.07f, am.lens));
+            float cableBottom = scr.transform.position.y + sh * 0.5f + 0.2f;
+            float cableLen = HallH - cableBottom;
+            for (int i = -1; i <= 1; i += 2)
+                LocalPrim(PrimitiveType.Cube, "Cable", st, new Vector3(i * (sw * 0.5f - 0.3f), sh * 0.5f + 0.2f + cableLen * 0.5f, 0.02f), new Vector3(0.02f, cableLen, 0.02f), am.metal);
+            arena.screenFace = face.GetComponent<Renderer>();
+
+            // ---- what the screen shows (3.2 x 1 units, filmed by its own camera)
+            GameObject sr = new GameObject("Video Screen Rig");
+            sr.transform.SetParent(root.transform, false);
+            sr.transform.position = new Vector3(0f, -300f, 0f);
+            Transform rt = sr.transform;
+            arena.screenCamera = MakeRigCamera("Screen Camera", rt, new Vector3(0f, 0f, -5f), 0.5f, ScreenLayer, new Color(0.035f, 0.09f, 0.24f));
+            RigQuad(rt, "Background", new Vector3(0f, 0f, 1f), new Vector2(3.3f, 1.05f), am.rigNavy);
+            RigQuad(rt, "Lower Band", new Vector3(0f, -0.28f, 0.9f), new Vector2(3.3f, 0.5f), am.rigNavyDark);
+            arena.screenBar = RigQuad(rt, "Bar", new Vector3(0f, 0.385f, 0.5f), new Vector2(3.06f, 0.17f), am.rigBar).GetComponent<Renderer>();
+            arena.screenBarText = AddText(rt, "Bar Text", new Vector3(0f, 0.385f, 0f), arena.screenTitle, 0.085f, new Color(0.08f, 0.03f, 0f), font, true);
+            AddText(rt, "YOU", new Vector3(-0.78f, -0.03f, 0f), "YOU", 0.13f, Color.white, font, true, TextAnchor.MiddleRight);
+            AddText(rt, "CPU", new Vector3(0.78f, -0.03f, 0f), "CPU", 0.13f, Color.white, font, true, TextAnchor.MiddleLeft);
+            RigQuad(rt, "Dot You", new Vector3(-1.36f, -0.03f, 0.2f), new Vector2(0.17f, 0.17f), am.dotRed);
+            RigQuad(rt, "Dot CPU", new Vector3(1.36f, -0.03f, 0.2f), new Vector2(0.17f, 0.17f), am.dotBlue);
+            arena.screenScore = AddText(rt, "Score", new Vector3(0f, -0.04f, 0f), "0 : 0", 0.3f, Color.white, font, true);
+            arena.screenInfo = AddText(rt, "Info", new Vector3(0f, -0.37f, 0f), "RALLY 0   ·   LONGEST 0", 0.07f, new Color(1f, 0.69f, 0.37f), font, true);
+            SetLayer(sr, ScreenLayer);
+
+            // ---- camera flashes in the crowd (a small pool reused at random spectators)
+            arena.flashes = new Transform[5];
+            for (int i = 0; i < arena.flashes.Length; i++)
+            {
+                GameObject f = Prim(PrimitiveType.Quad, "Camera Flash", root.transform, Vector3.zero, Vector3.one * 0.3f, am.flash);
+                NoShadows(f);
+                arena.flashes[i] = f.transform;
+            }
+        }
+
+        static Camera MakeRigCamera(string name, Transform parent, Vector3 localPos, float halfHeight, int layer, Color background)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPos;
+            go.transform.localRotation = Quaternion.identity;
+            Camera c = go.AddComponent<Camera>();
+            c.orthographic = true;
+            c.orthographicSize = halfHeight;
+            c.nearClipPlane = 0.1f;
+            c.farClipPlane = 20f;
+            c.clearFlags = CameraClearFlags.SolidColor;
+            c.backgroundColor = background;
+            c.cullingMask = 1 << layer;
+            c.allowMSAA = false;
+            c.allowHDR = false;
+            c.useOcclusionCulling = false;
+            c.depth = -10f;
+            return c;
+        }
+
+        static GameObject RigQuad(Transform parent, string name, Vector3 localPos, Vector2 size, Material mat)
+        {
+            GameObject q = LocalPrim(PrimitiveType.Quad, name, parent, localPos, new Vector3(size.x, size.y, 1f), mat);
+            NoShadows(q);
+            return q;
+        }
+
+        static GameObject NoShadows(GameObject go)
+        {
+            Renderer r = go.GetComponent<Renderer>();
+            if (r != null)
+            {
+                r.shadowCastingMode = ShadowCastingMode.Off;
+                r.receiveShadows = false;
+            }
+            return go;
+        }
+
+        static void SetLayer(GameObject go, int layer)
+        {
+            go.layer = layer;
+            foreach (Transform child in go.transform) SetLayer(child.gameObject, layer);
+        }
+
+        static Material GetUnlitMat(string name, string shaderName, Color color, Texture2D tex, Vector2 tiling)
+        {
+            Shader sh = Shader.Find(shaderName);
+            if (sh == null) sh = Shader.Find("Universal Render Pipeline/Unlit");
+            Material mat = LoadOrCreate(name, sh);
+            if (mat == null) return null;
+            if (mat.HasProperty("_Color")) mat.SetColor("_Color", color);
+            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
+            Vector2 scale = tiling == Vector2.zero ? Vector2.one : tiling;
+            if (mat.HasProperty("_MainTex"))
+            {
+                mat.SetTexture("_MainTex", tex);
+                mat.SetTextureScale("_MainTex", scale);
+            }
+            if (mat.HasProperty("_BaseMap"))
+            {
+                mat.SetTexture("_BaseMap", tex);
+                mat.SetTextureScale("_BaseMap", scale);
+            }
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        static PingPongPaddle CreatePaddle(string name, Side side, Vector3 pos, Material front, Material back, Material wood)
         {
             GameObject root = new GameObject(name);
             root.transform.position = pos;
@@ -586,9 +917,9 @@ namespace PingPong.EditorTools
             // A cylinder (diameter 1, height 2) flattened into a disc and turned to face along the Z axis.
             GameObject blade = LocalPrim(PrimitiveType.Cylinder, "Blade", root.transform, Vector3.zero, new Vector3(0.265f, 0.004f, 0.265f), wood);
             blade.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            GameObject a = LocalPrim(PrimitiveType.Cylinder, "Rubber Red", root.transform, new Vector3(0f, 0f, -0.006f), new Vector3(0.255f, 0.002f, 0.255f), red);
+            GameObject a = LocalPrim(PrimitiveType.Cylinder, "Rubber Front", root.transform, new Vector3(0f, 0f, -0.006f), new Vector3(0.255f, 0.002f, 0.255f), front);
             a.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            GameObject b = LocalPrim(PrimitiveType.Cylinder, "Rubber Black", root.transform, new Vector3(0f, 0f, 0.006f), new Vector3(0.255f, 0.002f, 0.255f), black);
+            GameObject b = LocalPrim(PrimitiveType.Cylinder, "Rubber Back", root.transform, new Vector3(0f, 0f, 0.006f), new Vector3(0.255f, 0.002f, 0.255f), back);
             b.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             LocalPrim(PrimitiveType.Cube, "Handle", root.transform, new Vector3(0f, -0.18f, 0f), new Vector3(0.034f, 0.11f, 0.026f), wood);
 
@@ -611,15 +942,15 @@ namespace PingPong.EditorTools
             return l;
         }
 
-        static TextMesh AddText(Transform parent, string name, Vector3 localPos, string text, float height, Color color, Font font, bool bold = false)
+        static TextMesh AddText(Transform parent, string name, Vector3 localPos, string text, float height, Color color, Font font, bool bold = false, TextAnchor anchor = TextAnchor.MiddleCenter)
         {
             GameObject go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.transform.localPosition = localPos;
             TextMesh tm = go.AddComponent<TextMesh>();
             tm.text = text;
-            tm.anchor = TextAnchor.MiddleCenter;
-            tm.alignment = TextAlignment.Center;
+            tm.anchor = anchor;
+            tm.alignment = anchor == TextAnchor.MiddleLeft ? TextAlignment.Left : anchor == TextAnchor.MiddleRight ? TextAlignment.Right : TextAlignment.Center;
             tm.fontSize = 200;                          // big glyphs = crisper text
             tm.characterSize = height / (0.716f * 20f); // capital letter height ≈ height (em = fontSize * 0.1 * characterSize)
             tm.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal;
@@ -687,7 +1018,7 @@ namespace PingPong.EditorTools
         static Color SportFloorPixel(float u, float v)
         {
             float n = 0.88f + noiseA.Sample(u, v) * 0.14f + noiseB.Sample(u, v) * 0.08f;
-            Color c = new Color(0.5f, 0.19f, 0.14f) * n;
+            Color c = new Color(0.4f, 0.105f, 0.085f) * n;
             c.a = 1f;
             return c;
         }
@@ -723,6 +1054,15 @@ namespace PingPong.EditorTools
             bool lineY = y - Mathf.Floor(y) < 0.3f;
             bool edge = v > 0.9f || v < 0.04f;
             return new Color(1f, 1f, 1f, (lineX || lineY || edge) ? 1f : 0f);
+        }
+
+        static Color LedDotPixel(float u, float v)
+        {
+            // dark grid between round LED "pixels"
+            float dx = u - 0.5f, dy = v - 0.5f;
+            float d = Mathf.Sqrt(dx * dx + dy * dy);
+            float a = Mathf.Clamp01((d - 0.3f) / 0.12f) * 0.65f;
+            return new Color(0f, 0f, 0f, a);
         }
 
         static Color BlobPixel(float u, float v)

@@ -103,6 +103,8 @@ namespace PingPong
         {
             score[0] = 0;
             score[1] = 0;
+            rallyHits = 0;
+            LongestRally = 0;
             server = Side.Player;
             ShowMessage("First to " + pointsToWin + " points (win by 2)!", 2.5f);
             PrepareServe();
@@ -222,6 +224,10 @@ namespace PingPong
         }
 
         public int PlayerScore { get { return score[0]; } }
+        /// <summary>Hits in the current (or last) rally.</summary>
+        public int RallyHits { get { return rallyHits; } }
+        /// <summary>Longest rally in this match.</summary>
+        public int LongestRally { get; private set; }
         public int AIScore { get { return score[1]; } }
         public bool PlayerServing { get { return server == Side.Player; } }
 
@@ -235,6 +241,7 @@ namespace PingPong
             lastHitter = pad.side;
             receiverBounced = false;
             rallyHits++;
+            if (rallyHits > LongestRally) LongestRally = rallyHits;
             timeSinceHit = 0f;
 
             Vector3 from = contact;

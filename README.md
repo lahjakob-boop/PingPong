@@ -1,6 +1,6 @@
 # PingPong 🏓
 
-A 3D table tennis game in Unity: you vs. the computer in a sports hall with bleachers, a cheering crowd, barriers and a scoreboard. Everything is built from primitives and procedural textures, so no external assets are needed.
+A 3D table tennis game in Unity: you vs. the computer in a dark tournament arena – spotlights on the table, animated LED boards around the court, a big video screen with the live score and a cheering crowd. Everything is built from primitives and procedural textures, so no external assets are needed.
 
 ## How to run
 
@@ -45,7 +45,8 @@ The paddle's hit area is bigger than the paddle itself. You can change it on **P
 | `Scripts/PingPongBall.cs` | custom ball physics (gravity, bounces, net, paddle hits) and sounds |
 | `Scripts/PingPongPaddle.cs` | player paddle (mouse) and computer paddle (predicts the ball) |
 | `Scripts/PingPongGame.cs` | rules, scoring, serving, difficulty, on-screen UI |
-| `Scripts/PingPongScoreboard.cs` | scoreboard next to the table |
+| `Scripts/PingPongArena.cs` | animated LED boards, the video screen with the live score, camera flashes in the crowd |
+| `Scripts/PingPongLedPanel.cs` | one LED board (shows its slice of the LED strip) |
 | `Scripts/PingPongMenu.cs` | start menu, settings, pause menu and game-over screen |
 | `Scripts/PingPongCrowd.cs` | crowd cheers / applause on every point, spectators jump |
 | `Audio/*.wav` | crowd sounds (synthesised with `Tools/crowd_sfx.py`, no external samples) |
